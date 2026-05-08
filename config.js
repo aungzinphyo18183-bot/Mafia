@@ -1,3 +1,0 @@
-// config.js
-const BOT_TOKEN = "8590328338:AAEb690PtKljqE63TLQKJ4rkCWyEsCzhXNU";
-const IMGBB_API_KEY = "b7ba0100d04e0add952f217e712c7ff8";
